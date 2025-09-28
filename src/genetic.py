@@ -10,7 +10,7 @@ RIGHT = "11"
 MOVES = [UP, DOWN, LEFT, RIGHT]
 
 # Largo de cada cromosoma/individuo, corresponde al numero de ACCIONES que podrá realizar cada individuo
-cromosoma_lenght = ((WIDTH - 2) * (HEIGHT - 2))//2
+cromosoma_lenght = ((WIDTH) * (HEIGHT))//2
 
 def gen_solver(start, goals, maze):
 
@@ -30,7 +30,7 @@ def gen_solver(start, goals, maze):
     '''
 
     # cromosoma_lenght = 5
-    gen_size = 50 #Tamaño de la generacion
+    gen_size = 100 #Tamaño de la generacion
 
     new_gen = [] # Lista donde se almacenarán los nuevos individuos luego del crossover y la mutacion
     old_gen = [] # Lista donde se almacenarán los individuos que se pondrán a prueba en el laberinto
@@ -38,11 +38,11 @@ def gen_solver(start, goals, maze):
     pos = start                         # Posicion inicial en donde se comienza el recorrido en el laberinto
     true_goal = random.choice(goals)    # Seleccion de una salida verdadera al azar
     score = []                          # Lista donde se almacenarán los valores dados por la FITNESS FUNCTION para cada individuo
-    # top_10 = []                         # Lista donde se almacenarán los 10 mejores individuos de cada generacion (ELITISM)
+    # top_10 = []                       # Lista donde se almacenarán los 10 mejores individuos de cada generacion (ELITISM)
     n_gen = 0                           # Contador de generaciones
-    gen_limit = 10                       # Limite de numero de generaciones
+    gen_limit = 50                      # Limite de numero de generaciones
     elitism_list = []                   # Lista donde se almacenarán los 10 mejores individuos de cada generacion (ELITISM)
-    # elite_num = 10                      # Cantidad de individuos que se elegiran como elite de su generacion
+    # elite_num = 10                    # Cantidad de individuos que se elegiran como elite de su generacion
     new_elite = []
 
     # print("Posicion inicial:", pos, maze[pos])
@@ -60,10 +60,6 @@ def gen_solver(start, goals, maze):
     for individual in old_gen:
         result = fitness_function(pos, individual, true_goal, maze)
 
-        # Descomentar para que el algoritmo termine una vez encontrada la solucion
-        # if result == 1.0:
-        #     return print("Individuo:", individual, "Encontró la salida del laberinto")
-
         if result >= 0.9:
             elitism_list.append(individual)
 
@@ -75,10 +71,7 @@ def gen_solver(start, goals, maze):
     #BUCLE PRINCIPAL
     while(n_gen < gen_limit):
 
-        # Guardamos en una lista los mejores individuos de su generacion
-        # elitism_list = heapq.nlargest(elite_num,score)
         score.clear()
-
 
         # print("Top 10 mejores individuos de la gen:", elitism_list)
         print("NUMERO DE INDIVIDUOS:", len(old_gen))
@@ -94,19 +87,20 @@ def gen_solver(start, goals, maze):
             
             # Dado que se está utilizando la FITNESS FUNCTION, podemos saber inmediatamente si ya se ha encontrado una solucion, por lo tanto:
             if result1 == 1.0:
-                # return print("Individuo:", child1, "Encontró la salida del laberinto")
-
-                # Borrar despues
-                score.append(1.0)
-                new_gen.append(child1)
-                continue
+                print("Individuo:", child1, "Encontró la salida del laberinto")
+                return child1
+                # # Borrar despues
+                # score.append(1.0)
+                # new_gen.append(child1)
+                # continue
             if result2 == 1.0:
-                # return print("Individuo:", child2, "Encontró la salida del laberinto")
+                print("Individuo:", child2, "Encontró la salida del laberinto")
+                return child2
                 
-                # Borrar despues
-                score.append(1.0)
-                new_gen.append(child2)
-                continue
+                # # Borrar despues
+                # score.append(1.0)
+                # new_gen.append(child2)
+                # continue
             
             # Si uno de los individuos anteriores no era una solucion entonces les aplicamos una mutacion
             child1 = mutation(child1)

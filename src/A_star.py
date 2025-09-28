@@ -2,6 +2,16 @@ import random
 import math
 from maze_generator import *
 
+# Definición de colores
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+DARK_GREEN = (15,67,15)
+
+# cell = 20
+
 def A_star(start, goals, maze):
 
     '''
@@ -11,19 +21,18 @@ def A_star(start, goals, maze):
     cercana a medida que se avanza en el laberinto
     3. El algoritmo fija la salida que tenga mas cerca y recorre el laberinto para encontrarla
     '''
-    visited = [start] # Lista de nodos visitados 
+    visited = [start] # Lista de nodos visitados
     queue = [] # Lista de nodos en cola (por visitar)
     path = [] # Camino seguido hasta la salida
     pos = start # Posicion actual
     obj_g = 0
 
-    true_goal = random.choice(goals)
-
     # Verificacion de termino por si el punto de inicio coincide con una meta
     if pos in goals:
         if pos == true_goal: # Si es la meta verdadera se termina la ejecucion
             print("Se ha encontrado una solucion en:", pos)
-            return
+            maze[pos] = -4
+            return maze
         else:
             goals.remove(pos) # Si es una meta falsa se elimina del conjunto de metas
 
@@ -38,11 +47,11 @@ def A_star(start, goals, maze):
     # Obtencion de vecinos
     neighbors = get_neighbors(pos, maze, queue, visited)
 
-    # Adicion de vecinos a los nodos no visitados, (permite duplicados)
+    # Adicion de vecinos a los nodos no visitados
     queue = queue + neighbors
 
     print("Posicion inicial:", pos, maze[pos])
-    print("Posibles metas:", goals, maze[goals[0]], maze[goals[1]], maze[goals[2]], maze[goals[3]])
+    print("Posibles metas:", goals)
     print("Meta verdadera:", true_goal, maze[true_goal])
     print("Meta objetivo:", obj_g)
     print("Paredes moviles:", mov_wall)
@@ -68,11 +77,15 @@ def A_star(start, goals, maze):
         
         # Verificacion de termino
         if pos in goals:
+            # Si estamos en la meta verdadera se acaba la ejecucion del algoritmo
             if pos == true_goal:
                 print("Se ha encontrado una solucion en:", pos)
-                return
+                maze[pos] = -4
+                return maze
+            # Si estamos en una meta falsa pero esta era nuestra meta objetivo, fijamos la proxima meta mas cercana
             elif pos == obj_g:
                 print("Se ha encontrado una salida falsa en", pos, maze[pos])
+                maze[pos] = -3
                 # Encontramos la salida mas cercana
                 goals.remove(obj_g)
                 min = math.inf
@@ -81,24 +94,29 @@ def A_star(start, goals, maze):
                     if dist < min:
                         min = dist
                         obj_g = goal
+            # Si era una meta falsa pero no era la meta objetivo, simplemente la eliminamos del conjunto de metas
             else:
                 goals.remove(pos)
+                maze[pos] = -3
             print("metas restantes:", goals)
             print("Nueva meta obejtivo:", obj_g)
 
         # Obtencion de vecinos
         neighbors = get_neighbors(pos, maze, queue, visited)
 
-        # Adicion de vecinos a los nodos no visitados, (permite duplicados)
+        # Adicion de vecinos a los nodos no visitados
         queue = queue + neighbors
     
     print("No se ha encontrado una solucion, posicion final:", pos)
+    return maze
+
+
 
 # Mini main
-maze = maze_generator()
+# maze = maze_generator()
 
-print(maze)
-print()
-A_star(pos_incial, goals, maze)
-print()
-print(maze)
+# print(maze)
+# print()
+# A_star(pos_incial, goals, maze)
+# print()
+# print(maze)

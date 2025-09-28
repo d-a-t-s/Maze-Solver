@@ -3,8 +3,8 @@ import numpy as np
 import math as math
 
 # Tanto el ancho como el largo del laberinto deben ser impares
-WIDTH = 11  # Ancho del laberinto
-HEIGHT = 11 # Largo del laberinto
+WIDTH = 21  # Ancho del laberinto
+HEIGHT = 21 # Largo del laberinto
 
 # Verificaciones
 assert WIDTH % 2 == 1 and WIDTH >= 3
@@ -33,6 +33,7 @@ mov_wall = [] # Lista de posiciones de las paredes moviles
 prob_wall = 0.05 # Probabilidad de que una pared sea una pared movil
 prob_move = 0.05 # Probabilidad de que una pared movil se mueva en cada iteracion
 goals = [(1,1), (1, HEIGHT-2), (WIDTH-2, 1), (WIDTH-2, HEIGHT-2)] # Posiciones finales posibles, estan predefinidas como las esquinas, aunque despues se podria probar colocandolas aleatoriamente
+true_goal = random.choice(goals)
 
 # Declaracion de variables globales
 grid_maze = np.ones((HEIGHT, WIDTH), dtype=int) * -1 # El laberinto al inicio esta completamente hecho de paredes
