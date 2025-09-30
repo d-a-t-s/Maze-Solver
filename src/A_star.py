@@ -1,5 +1,5 @@
 import heapq
-from maze_generator1 import *
+from maze_generator import *
 
 def A_star(pos_inicial, goals, maze):
     """
@@ -21,8 +21,12 @@ def A_star(pos_inicial, goals, maze):
         # Obtener el nodo con el menor f y quitarlo de la cola
         _, pos = heapq.heappop(queue)
 
-        # Yield para visualización
-        #yield maze, pos, visited
+
+        # Damos la posibilidad de que las paredes se muevan
+        update_maze(maze)
+
+        #Visualizacion del proceso
+        yield maze, pos
 
         # Verificación de nodos visitados
         if pos in visited:
@@ -33,20 +37,32 @@ def A_star(pos_inicial, goals, maze):
 
         # Verificación de término
         if pos == true_goal:
-            maze[pos] = -4
-            camino = reconstruir_camino(came_from, pos)
-            #for nodo in camino:
-                #maze[nodo] = 0
-                #yield maze, nodo, visited
+            camino = rebuild_path(came_from, pos)
+            if blocked_path(camino, maze):
+                
+                print("Camino bloqueado, replanning...")
+
+                # Se reinician las estructuras de datos para replanificar
+                queue.clear()
+                heapq.heappush(queue, (0, pos_inicial))
+                came_from.clear()
+                g_score = {pos_inicial: 0}
+                visited.clear()
+                
+                continue
+            else:
+                for nodo in camino:
+                    maze[nodo] = 0
+                    yield maze, nodo
+            
             return camino
         
         # Caso en que se llega a una meta falsa
         if pos in goals and pos != true_goal:
-            maze[pos] = -3
             goals.remove(pos)
 
         # Damos la posibilidad de que las paredes se muevan
-        update_maze(maze)
+        #update_maze(maze)
 
         # Expandimos vecinos
         vecinos = get_neighbors(pos, maze)
@@ -57,7 +73,7 @@ def A_star(pos_inicial, goals, maze):
             # Actualizar g_score y came_from si es un mejor camino
             if vecino not in g_score or g_temp < g_score[vecino]:
                 g_score[vecino] = g_temp
-                f = g_temp + heuristica(vecino, goals, true_goal)
+                f = g_temp + heuristic(vecino, goals, true_goal)
                 # Si el vecino no está en la cola, lo añadimos
                 heapq.heappush(queue, (f, vecino))
                 # Actualizamo el diccionario para guardar el camino
@@ -67,7 +83,7 @@ def A_star(pos_inicial, goals, maze):
     return None
 
 
-def heuristica(pos, goals, true_goal):
+def heuristic(pos, goals, true_goal):
     """
     Heurística de Manhattan hacia la meta más cercana.
     """
@@ -76,7 +92,7 @@ def heuristica(pos, goals, true_goal):
     return min(abs(pos[0] - g[0]) + abs(pos[1] - g[1]) for g in goals)
 
 
-def reconstruir_camino(came_from, pos):
+def rebuild_path(came_from, pos):
     """
     Reconstrucción del camino desde el inicio hasta la posición actual.
     """
@@ -96,33 +112,3 @@ def blocked_path(camino, maze):
         if maze[nodo] == -2:  # Si es una pared móvil
             return True
     return False
-
-""""""
-def A_star_dynamic(start, goals, maze):
-    """
-    Función A* para laberintos con paredes móviles.
-    Si el camino se bloquea, reinicia la búsqueda desde la posición actual.
-    """
-    current_pos = start
-    goals = list(goals)  # Copia de las metas originales
-    
-    while True:
-        result = A_star(start, goals, maze)
-        
-        if result is None:
-            print("No se encontró solución.")
-            return None
-        else:
-            print("Camino encontrado")
-            
-        # Verificar si el camino está bloqueado
-        if not blocked_path(result, maze):
-            return result  # Camino encontrado y no bloqueado
-        else:
-            print("Camino bloqueado, replanning...")
-
-maze = maze_generator()
-resultado = A_star_dynamic(pos_inicial, goals, maze)
-print(pos_inicial)
-print(true_goal)
-print("Camino encontrado:", resultado)

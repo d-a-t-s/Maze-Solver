@@ -1,4 +1,4 @@
-from maze_generator1 import *
+from maze_generator import *
 import copy
 
 # Declaracion de alelos para la construccion posterior de los cromosomas

@@ -21,8 +21,8 @@ HOLLOW = 0
 
 # Dleclaracion de variables
 mov_wall = [] # Lista de posiciones de las paredes moviles
-prob_wall = 0.35 # Probabilidad de que una pared sea una pared movil
-prob_move = 0.35 # Probabilidad de que una pared movil se mueva en cada iteracion
+prob_wall = 0.15 # Probabilidad de que una pared sea una pared movil
+prob_move = 0.15 # Probabilidad de que una pared movil se mueva en cada iteracion
 goals = [(1,1), (HEIGHT-2, 1), (1, WIDTH-2), (WIDTH-2, HEIGHT-2)] # Posiciones finales posibles, estan predefinidas como las esquinas, aunque despues se podria probar colocandolas aleatoriamente
 true_goal = random.choice(goals)
 
@@ -98,7 +98,6 @@ def update_maze(maze):
 
         dinamic_wall = random.choice(mov_wall)
         mov_wall.remove(dinamic_wall)
-        
         posibilities = []
 
         if maze[dinamic_wall[0]+1][dinamic_wall[1]] >= 0:
@@ -110,13 +109,13 @@ def update_maze(maze):
         if maze[dinamic_wall[0]][dinamic_wall[1]-1] >= 0:
             posibilities.append((dinamic_wall[0], dinamic_wall[1]-1))
         
+        
         if posibilities:
             move = random.choice(posibilities)
             swap = maze[dinamic_wall[0]][dinamic_wall[1]]
             maze[dinamic_wall[0]][dinamic_wall[1]] = maze[move[0]][move[1]]
             maze[move[0]][move[1]] = swap
-            print("Se ha movido una pared de:", dinamic_wall, "a", move)
-            #print(maze)
+            mov_wall.append(move)
 
 def get_neighbors(node, maze):
     neighbors = []

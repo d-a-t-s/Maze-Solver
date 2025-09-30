@@ -1,4 +1,4 @@
-import random, pygame
+import copy
 import A_star
 import pygame
 from maze_generator import *
@@ -7,10 +7,9 @@ from maze_generator import *
 # Inicialización de Pygame
 pygame.init()
 
-cell = 20
+WIN_SIZE = 400
 
 # Definición de colores
-WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
@@ -19,13 +18,18 @@ DARK_GREEN = (15,67,15)
 L_BLUE = (100,149,237)
 YELLOW = (255,255,0)
 FAKE = (142,112,65)
+GRAY = (128, 128, 128)
+
+cell_w = WIN_SIZE // WIDTH
+cell_h = WIN_SIZE // HEIGHT
+cell = min(cell_w, cell_h)
+
 
 maze = maze_generator()
-
-maze = A_star.A_star(pos_incial, goals, maze)
+steps = A_star.A_star(pos_inicial, goals, maze)
 
 # Creación de la pantalla y dibujar el laberinto
-screen = pygame.display.set_mode((WIDTH * cell, HEIGHT * cell))
+screen = pygame.display.set_mode((WIN_SIZE, WIN_SIZE))
 pygame.display.set_caption("Maze")
 
 # Dibujar el laberinto en pantalla
@@ -38,7 +42,7 @@ def draw_maze(maze):
                 pygame.draw.rect(screen, RED, (col * cell, row * cell, cell, cell))
             elif maze[row][col] == 0:
                 pygame.draw.rect(screen, BLUE, (col * cell, row * cell, cell, cell))
-            elif (row,col) == pos_incial:
+            elif (row,col) == pos_inicial:
                 pygame.draw.rect(screen, L_BLUE, (col * cell, row * cell, cell, cell))
             elif (row,col) in goals:
                 if (row,col) == true_goal:
@@ -55,18 +59,27 @@ def draw_maze(maze):
 def main():
     global running
     running = True
-    # print(laberinto)
 
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                
 
-        screen.fill(WHITE)
+        try:
+            maze, pos = next(steps)  # obtenemos el siguiente estado
+        except StopIteration:
+            running = False
+            continue  # salimos del loop
+
+        screen.fill(GRAY)
         draw_maze(maze)
-        pygame.display.flip()
 
+        # resaltamos la posición actual en amarillo
+        pygame.draw.rect(screen, YELLOW, (pos[1]*cell, pos[0]*cell, cell, cell))
+
+        pygame.display.flip()
+        pygame.time.delay(250) 
+    
     pygame.quit()
 
 if __name__ == "__main__":
