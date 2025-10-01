@@ -11,9 +11,9 @@ def A_star(pos_inicial, goals, maze):
 
     # Inicialización
     queue = []  # cola de prioridad
-    heapq.heappush(queue, (0, pos_inicial))
+    heapq.heappush(queue, (0, maze.pos_inicial))
     came_from = {}
-    g_score = {pos_inicial: 0}
+    g_score = {maze.pos_inicial: 0}
     visited = set()
 
     while queue:
@@ -23,10 +23,10 @@ def A_star(pos_inicial, goals, maze):
 
 
         # Damos la posibilidad de que las paredes se muevan
-        update_maze(maze)
+        maze.update_maze()
 
         #Visualizacion del proceso
-        yield maze, pos
+        #yield maze.grid_maze, pos
 
         # Verificación de nodos visitados
         if pos in visited:
@@ -36,7 +36,7 @@ def A_star(pos_inicial, goals, maze):
         visited.add(pos)
 
         # Verificación de término
-        if pos == true_goal:
+        if pos == maze.true_goal:
             camino = rebuild_path(came_from, pos)
             if blocked_path(camino, maze):
                 
@@ -50,30 +50,27 @@ def A_star(pos_inicial, goals, maze):
                 visited.clear()
                 
                 continue
-            else:
-                for nodo in camino:
-                    maze[nodo] = 0
-                    yield maze, nodo
+            #else:
+                #for nodo in camino:
+                    #maze[nodo] = 0
+                    #yield maze, nodo
             
             return camino
         
         # Caso en que se llega a una meta falsa
-        if pos in goals and pos != true_goal:
-            goals.remove(pos)
-
-        # Damos la posibilidad de que las paredes se muevan
-        #update_maze(maze)
+        if pos in maze.goals and pos != maze.true_goal:
+            maze.goals.remove(pos)
 
         # Expandimos vecinos
-        vecinos = get_neighbors(pos, maze)
+        vecinos = maze.get_neighbors(pos)
         for vecino in vecinos:
             # Cálculo de g y f de cada vecino
             
-            g_temp = g_score[pos] + maze[vecino]
+            g_temp = g_score[pos] + maze.grid_maze[vecino]
             # Actualizar g_score y came_from si es un mejor camino
             if vecino not in g_score or g_temp < g_score[vecino]:
                 g_score[vecino] = g_temp
-                f = g_temp + heuristic(vecino, goals, true_goal)
+                f = g_temp + heuristic(vecino, maze.goals, maze.true_goal)
                 # Si el vecino no está en la cola, lo añadimos
                 heapq.heappush(queue, (f, vecino))
                 # Actualizamo el diccionario para guardar el camino
@@ -108,7 +105,6 @@ def blocked_path(camino, maze):
     Verifica si el camino está bloqueado por paredes móviles.
     """
     for nodo in camino:
-        print(nodo, maze[nodo])
-        if maze[nodo] == -2:  # Si es una pared móvil
+        if maze.grid_maze[nodo] == -2:  # Si es una pared móvil
             return True
     return False

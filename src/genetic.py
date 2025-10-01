@@ -11,19 +11,18 @@ RIGHT = "11"
 MOVES = [UP, DOWN, LEFT, RIGHT]
 
 # Largo de cada cromosoma/individuo, corresponde al numero de ACCIONES que podrá realizar cada individuo
-cromosoma_lenght = ((WIDTH) * (HEIGHT))//2
 
 def execute_action(position, action, maze):
     """Ejecuta una acción (movimiento) si es válida en el laberinto actual."""
     row, col = position
     
-    if action == UP and maze[row - 1][col] >= 0:
+    if action == UP and maze.grid_maze[row - 1][col] >= 0:
         return (row - 1, col)
-    elif action == DOWN and maze[row + 1][col] >= 0:
+    elif action == DOWN and maze.grid_maze[row + 1][col] >= 0:
         return (row + 1, col)
-    elif action == LEFT and maze[row][col - 1] >= 0:
+    elif action == LEFT and maze.grid_maze[row][col - 1] >= 0:
         return (row, col - 1)
-    elif action == RIGHT and maze[row][col + 1] >= 0:
+    elif action == RIGHT and maze.grid_maze[row][col + 1] >= 0:
         return (row, col + 1)
     
     # Si el movimiento no es válido (choca con una pared), se queda en el mismo lugar.
@@ -42,17 +41,17 @@ def fitness_function(posicion, individual, true_goal, maze):
     '''
     maze_copy = copy.deepcopy(maze)
     current_pos = posicion
-    max_dist = WIDTH + HEIGHT # Factor de normalización
+    max_dist = maze.width + maze.height # Factor de normalización
     
     for i in range(0, len(individual), 2):
         
         action = individual[i:i+2]
         current_pos = execute_action(current_pos, action, maze_copy)
 
-        update_maze(maze_copy) #Se da la posibilidad de que una pared se mueva
+        maze_copy.update_maze() #Se da la posibilidad de que una pared se mueva
         
         # Verificacion de termino
-        if current_pos in goals:
+        if current_pos in maze.goals:
             if current_pos == true_goal:
                 return 1.0
             
@@ -103,8 +102,34 @@ def mutation(individual, mutation_rate=0.05):
             
     return "".join(mutated_individual)
 
+def decode_path(start, individual, true_goal, maze):
+    """
+    Reconstruye el camino que sigue un cromosoma hasta alcanzar la meta verdadera.
+    Si no llega a la meta, devuelve el camino recorrido.
+    """
+    current_pos = start
+    path = [current_pos]  # incluir la posición inicial
+
+    for i in range(0, len(individual), 2):
+        action = individual[i:i+2]
+        next_pos = execute_action(current_pos, action, maze)
+        
+        # Solo agregamos si realmente se movió
+        if next_pos != current_pos:
+            path.append(next_pos)
+
+        current_pos = next_pos
+
+        # Si alcanzó la meta verdadera, se detiene
+        if current_pos == true_goal:
+            return path
+
+    # Si nunca llegó, retorna solo el camino recorrido
+    return path
+
 def gen_solver(start, goals, maze):
 
+    cromosoma_lenght = ((maze.width) * (maze.height))//2
     '''
     Algoritmo genetico para encontrar una solucion a un laberinto dado y consta de las siguientes fases:
     
@@ -122,7 +147,6 @@ def gen_solver(start, goals, maze):
     gen_size = 100 # Tamaño de la generacion
     gen_limit = 50 # Limite de numero de generaciones
 
-    true_goal = random.choice(goals)    # Seleccion de una salida verdadera al azar
     n_gen = 0                           # Contador de generaciones
     
 
@@ -139,9 +163,10 @@ def gen_solver(start, goals, maze):
         # Calculo y almacenamiento del valor de la fitness function para cada individuo
         results = [] # Lista donde se almacenan los valores de la fitness function
         for individual in population:
-            result = fitness_function(start, individual, true_goal, maze)
+            result = fitness_function(start, individual, maze.true_goal, maze)
             if result == 1.0:
-                return 1
+                path = decode_path(start, individual, maze.true_goal, maze)
+                return path, 1
             results.append(result)
         
         elites = sorted(zip(population, results), key=lambda x: x[1], reverse=True)[:10] # Seleccion de los 10 mejores individuos
@@ -162,8 +187,8 @@ def gen_solver(start, goals, maze):
             child2 = mutation(child2)
 
             # Evaluación de los hijos para seleccionar el mejor
-            fit1 = fitness_function(start, child1, true_goal, maze)
-            fit2 = fitness_function(start, child2, true_goal, maze)
+            fit1 = fitness_function(start, child1, maze.true_goal, maze)
+            fit2 = fitness_function(start, child2, maze.true_goal, maze)
 
             # Una vez obtenido al de mayor valor podemos lo agregamos a la nueva generacion
             new_gen.append(child1 if fit1 > fit2 else child2)
@@ -173,4 +198,4 @@ def gen_solver(start, goals, maze):
         # Aumento del numero de la generacion
         n_gen = n_gen + 1
     
-    return 0
+    return None, 0

@@ -2,133 +2,148 @@ import random
 import numpy as np
 import math as math
 
-# Tanto el ancho como el largo del laberinto deben ser impares
-WIDTH = 21  # Ancho del laberinto
-HEIGHT = 21 # Largo del laberinto
-
-# Verificaciones
-assert WIDTH % 2 == 1 and WIDTH >= 3
-assert HEIGHT % 2 == 1 and HEIGHT >= 3
-
-# Semilla predefinida
-SEED = 3
-random.seed()
-
 # Declaracion de constantes
 WALL_M = -2
 WALL = -1
 HOLLOW = 0
 
-# Dleclaracion de variables
-mov_wall = [] # Lista de posiciones de las paredes moviles
-prob_wall = 0.15 # Probabilidad de que una pared sea una pared movil
-prob_move = 0.15 # Probabilidad de que una pared movil se mueva en cada iteracion
-goals = [(1,1), (HEIGHT-2, 1), (1, WIDTH-2), (WIDTH-2, HEIGHT-2)] # Posiciones finales posibles, estan predefinidas como las esquinas, aunque despues se podria probar colocandolas aleatoriamente
-true_goal = random.choice(goals)
+class Maze:
+    def __init__(self, n, prob_wall, prob_move, seed):
+    # Verificaciones
+        assert n % 2 == 1 and n >= 3
 
-# Declaracion de variables globales
-grid_maze = np.ones((HEIGHT, WIDTH), dtype=int) * -1 # El laberinto al inicio esta completamente hecho de paredes
-startx = random.randrange(1, WIDTH,2)
-starty = random.randrange(1, HEIGHT,2)
-pos_inicial = (starty, startx) # Posicion inicial
-hasVisited = [(starty, startx)] # Lista de posiciones visitadas
+        self.width = n  # Ancho del laberinto
+        self.height = n  # Alto del laberinto
+
+        # Semilla predefinida
+        if seed is not None:
+            random.seed(seed)
+
+        # Declaracion de constantes
+        WALL_M = -2
+        WALL = -1
+        HOLLOW = 0
+
+        # Dleclaracion de variables
+        self.mov_wall = [] # Lista de posiciones de las paredes moviles
+        self.prob_wall = prob_wall # Probabilidad de que una pared sea una pared movil
+        self.prob_move = prob_move # Probabilidad de que una pared movil se mueva en cada iteracion
+        self.goals = [(1,1), (self.height-2, 1), (1, self.width-2), (self.width-2, self.height-2)] # Posiciones finales posibles, estan predefinidas como las esquinas, aunque despues se podria probar colocandolas aleatoriamente
+        self.true_goal = random.choice(self.goals)
+
+        # Declaracion de variables globales
+        self.grid_maze = np.ones((self.height, self.width), dtype=int) * -1 # El laberinto al inicio esta completamente hecho de paredes
+        startx = random.randrange(1, self.width,2)
+        starty = random.randrange(1, self.height,2)
+        self.pos_inicial = (starty, startx) # Posicion inicial
+        self.hasVisited = [(starty, startx)] # Lista de posiciones visitadas
+
+        # Generar el laberinto
+        self._maze_generator()
+        # Configuración del dinamismo y los pesos
+        self._config_maze()
 
 
-def config_maze(maze):
+    def _config_maze(self):
 
-    '''
-    Funcion para la configuracion del laberinto, se encarga de recorrer la matriz y
-    asignar las paredes moviles y los pesos a los nodos de forma aleatoria
-    '''
+        '''
+        Funcion para la configuracion del laberinto, se encarga de recorrer la matriz y
+        asignar las paredes moviles y los pesos a los nodos de forma aleatoria
+        '''
 
-    # Recorrido de la matriz
-    for i in range(HEIGHT):
-        for j in range(WIDTH):
-            
-            # Asignacion de las paredes moviles del laberinto
-            if maze[i][j] == WALL:
-                if i > 0 and i < HEIGHT-1 and j > 0 and j < WIDTH-1 and random.uniform(0,1) < prob_wall: # Identificacion de pared interna
-                        mov_wall.append((i,j)) 
-                        maze[i][j] = WALL_M
+        # Recorrido de la matriz
+        for i in range(self.height):
+            for j in range(self.width):
+                
+                # Asignacion de las paredes moviles del laberinto
+                if self.grid_maze[i][j] == WALL:
+                    if i > 0 and i < self.height-1 and j > 0 and j < self.width-1 and random.uniform(0,1) < self.prob_wall: # Identificacion de pared interna
+                            self.mov_wall.append((i,j)) 
+                            self.grid_maze[i][j] = WALL_M
 
-            elif maze[i][j] == HOLLOW:
-                maze[i][j] = random.randint(1, WIDTH + HEIGHT - 2) # Asignacion de un peso aleatorio al nodo
+                elif self.grid_maze[i][j] == HOLLOW:
+                    dist_min = min(abs(i - g[0]) + abs(j - g[1]) for g in self.goals)
+                    self.grid_maze[i][j] = 1 + int(0.3 * dist_min)  # Asignacion de un peso basado en la distancia a la meta mas cercana
 
 
-def maze_generator():
+    def _maze_generator(self):
 
-    '''
-    Funcion principal para la generacion del laberinto
-    '''
-    '''
-    Genera un campo abierto con obstáculos aleatorios de baja densidad.
-    Es la forma más simple de garantizar (con alta probabilidad) la transibilidad.
-    '''
-    global grid_maze, mov_wall
+        '''
+        Funcion principal para la generacion del laberinto
+        '''
+        '''
+        Genera un campo abierto con obstáculos aleatorios de baja densidad.
+        Es la forma más simple de garantizar (con alta probabilidad) la transibilidad.
+        '''
+        
 
-    for i in range(HEIGHT):
-        for j in range(WIDTH):
-            # Bordes siempre paredes
-            if i == 0 or i == HEIGHT-1 or j == 0 or j == WIDTH-1:
-                grid_maze[i][j] = WALL
-            else:
-                if random.random() < 0.3:
-                    grid_maze[i][j] = WALL
+        for i in range(self.height):
+            for j in range(self.width):
+                # Bordes siempre paredes
+                if i == 0 or i == self.height-1 or j == 0 or j == self.width-1:
+                    self.grid_maze[i][j] = WALL
                 else:
-                    grid_maze[i][j] = HOLLOW
+                    if random.random() < 0.3:
+                        self.grid_maze[i][j] = WALL
+                    else:
+                        self.grid_maze[i][j] = HOLLOW
 
-    # Colocar posición inicial
-    grid_maze[starty][startx] = HOLLOW
+        # Colocar posición inicial
+        self.grid_maze[self.pos_inicial] = HOLLOW
 
-    # Colocar objetivos
-    for g in goals:
-        grid_maze[g[1]][g[0]] = HOLLOW
+        # Colocar objetivos
+        for g in self.goals:
+            self.grid_maze[g[1]][g[0]] = HOLLOW
 
-    # Configurar el laberinto (paredes móviles y pesos)
+        # 3. Configuración del dinamismo y los pesos
+         
+        return self.grid_maze
 
-    # 3. Configuración del dinamismo y los pesos
-    config_maze(grid_maze) 
-    return grid_maze
-
-def update_maze(maze):
-    
-    if not mov_wall:
-        return
-    if random.uniform(0,1) < prob_move:
-
-        dinamic_wall = random.choice(mov_wall)
-        mov_wall.remove(dinamic_wall)
-        posibilities = []
-
-        if maze[dinamic_wall[0]+1][dinamic_wall[1]] >= 0:
-            posibilities.append((dinamic_wall[0]+1, dinamic_wall[1]))
-        if maze[dinamic_wall[0]-1][dinamic_wall[1]] >= 0:
-            posibilities.append((dinamic_wall[0]-1, dinamic_wall[1]))
-        if maze[dinamic_wall[0]][dinamic_wall[1]+1] >= 0:
-            posibilities.append((dinamic_wall[0], dinamic_wall[1]+1))
-        if maze[dinamic_wall[0]][dinamic_wall[1]-1] >= 0:
-            posibilities.append((dinamic_wall[0], dinamic_wall[1]-1))
+    def update_maze(self):
         
-        
-        if posibilities:
-            move = random.choice(posibilities)
-            swap = maze[dinamic_wall[0]][dinamic_wall[1]]
-            maze[dinamic_wall[0]][dinamic_wall[1]] = maze[move[0]][move[1]]
-            maze[move[0]][move[1]] = swap
-            mov_wall.append(move)
+        if not self.mov_wall:
+            return
+        if random.uniform(0,1) < self.prob_move:
 
-def get_neighbors(node, maze):
-    neighbors = []
-    x = node[0]
-    y = node[1]
+            dinamic_wall = random.choice(self.mov_wall)
+            self.mov_wall.remove(dinamic_wall)
+            posibilities = []
 
-    if maze[x+1][y] > 0: #and (x+1,y) not in queue and (x+1,y) not in visited:
-        neighbors.append((x+1,y))
-    if maze[x][y+1] > 0: #and (x,y+1) not in queue and (x,y+1) not in visited:
-        neighbors.append((x,y+1))
-    if maze[x-1][y] > 0: #and (x-1,y) not in queue and (x-1,y) not in visited:
-        neighbors.append((x-1,y))
-    if maze[x][y-1] > 0: #and (x,y-1) not in queue and (x,y-1) not in visited:
-        neighbors.append((x,y-1))
-        
-    return neighbors
+            if self.grid_maze[dinamic_wall[0]+1][dinamic_wall[1]] >= 0:
+                posibilities.append((dinamic_wall[0]+1, dinamic_wall[1]))
+            if self.grid_maze[dinamic_wall[0]-1][dinamic_wall[1]] >= 0:
+                posibilities.append((dinamic_wall[0]-1, dinamic_wall[1]))
+            if self.grid_maze[dinamic_wall[0]][dinamic_wall[1]+1] >= 0:
+                posibilities.append((dinamic_wall[0], dinamic_wall[1]+1))
+            if self.grid_maze[dinamic_wall[0]][dinamic_wall[1]-1] >= 0:
+                posibilities.append((dinamic_wall[0], dinamic_wall[1]-1))
+            
+            if self.pos_inicial in posibilities:
+                posibilities.remove(self.pos_inicial)
+            
+            for goal in self.goals:
+                if goal in posibilities:
+                    posibilities.remove(goal)
+
+            if posibilities:
+                move = random.choice(posibilities)
+                swap = self.grid_maze[dinamic_wall[0]][dinamic_wall[1]]
+                self.grid_maze[dinamic_wall[0]][dinamic_wall[1]] = self.grid_maze[move[0]][move[1]]
+                self.grid_maze[move[0]][move[1]] = swap
+                self.mov_wall.append(move)
+
+    def get_neighbors(self, node):
+        neighbors = []
+        x = node[0]
+        y = node[1]
+
+        if self.grid_maze[x+1][y] > 0: 
+            neighbors.append((x+1,y))
+        if self.grid_maze[x][y+1] > 0: 
+            neighbors.append((x,y+1))
+        if self.grid_maze[x-1][y] > 0:
+            neighbors.append((x-1,y))
+        if self.grid_maze[x][y-1] > 0: 
+            neighbors.append((x,y-1))
+            
+        return neighbors
