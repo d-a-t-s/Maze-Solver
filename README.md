@@ -1,7 +1,5 @@
 # Maze-Solver
 
-````markdown
-# Maze-Solver
 ## Participantes
 
 - Matías Figueroa
