@@ -22,7 +22,7 @@ GRAY = (128, 128, 128)
 
 
 maze = Maze(21,0.05,0.05,random.randint(0,1000))
-steps = A_star.A_star(maze.pos_inicial, maze.goals, maze)
+steps = A_star.A_star(maze.pos_inicial, maze.goals, maze, visualize=True)
 
 cell_w = WIN_SIZE // maze.width
 cell_h = WIN_SIZE // maze.height
