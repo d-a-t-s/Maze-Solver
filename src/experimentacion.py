@@ -12,7 +12,7 @@ def run_solver(solver_func, start_pos, goals, maze):
     
     if solver_func == "A_star":
         
-        result = A_star(start_pos, goals, maze)
+        result = A_star(start_pos, goals, maze, visualize=False)
         
         if result is not None:
             path_length = len(result)

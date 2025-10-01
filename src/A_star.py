@@ -1,7 +1,7 @@
 import heapq
 from maze_generator import *
 
-def A_star(pos_inicial, goals, maze):
+def A_star(pos_inicial, goals, maze, visualize=False):
     """
     Algoritmo A* para la busqueda de la salida del laberinto:
     1. Se calcula la heuristica de cada nodo como la distancia de manhattan a la salida mas
@@ -26,7 +26,8 @@ def A_star(pos_inicial, goals, maze):
         maze.update_maze()
 
         #Visualizacion del proceso
-        #yield maze.grid_maze, pos
+        if visualize:
+            yield maze.grid_maze, pos
 
         # Verificación de nodos visitados
         if pos in visited:
@@ -50,10 +51,11 @@ def A_star(pos_inicial, goals, maze):
                 visited.clear()
                 
                 continue
-            #else:
-                #for nodo in camino:
-                    #maze[nodo] = 0
-                    #yield maze, nodo
+            else:
+                if visualize:
+                    for nodo in camino:
+                        maze.grid_maze[nodo] = 0
+                        yield maze.grid_maze, nodo
             
             return camino
         
