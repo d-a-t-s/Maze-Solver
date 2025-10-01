@@ -1,4 +1,4 @@
-import random, pygame
+import copy
 import A_star
 import pygame
 from maze_generator import *
@@ -7,10 +7,9 @@ from maze_generator import *
 # Inicialización de Pygame
 pygame.init()
 
-cell = 20
+WIN_SIZE = 400
 
 # Definición de colores
-WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
@@ -19,17 +18,22 @@ DARK_GREEN = (15,67,15)
 L_BLUE = (100,149,237)
 YELLOW = (255,255,0)
 FAKE = (142,112,65)
+GRAY = (128, 128, 128)
 
-maze = maze_generator()
 
-maze = A_star.A_star(pos_incial, goals, maze)
+maze = Maze(21,0.05,0.05,random.randint(0,1000))
+steps = A_star.A_star(maze.pos_inicial, maze.goals, maze)
+
+cell_w = WIN_SIZE // maze.width
+cell_h = WIN_SIZE // maze.height
+cell = min(cell_w, cell_h)
 
 # Creación de la pantalla y dibujar el laberinto
-screen = pygame.display.set_mode((WIDTH * cell, HEIGHT * cell))
+screen = pygame.display.set_mode((WIN_SIZE, WIN_SIZE))
 pygame.display.set_caption("Maze")
 
 # Dibujar el laberinto en pantalla
-def draw_maze(maze):
+def draw_maze(maze, maze_obj):
     for row in range(len(maze)):
         for col in range(len(maze[1])):
             if maze[row][col] == -1:
@@ -38,10 +42,10 @@ def draw_maze(maze):
                 pygame.draw.rect(screen, RED, (col * cell, row * cell, cell, cell))
             elif maze[row][col] == 0:
                 pygame.draw.rect(screen, BLUE, (col * cell, row * cell, cell, cell))
-            elif (row,col) == pos_incial:
+            elif (row,col) == maze_obj.pos_inicial:
                 pygame.draw.rect(screen, L_BLUE, (col * cell, row * cell, cell, cell))
-            elif (row,col) in goals:
-                if (row,col) == true_goal:
+            elif (row,col) in maze_obj.goals:
+                if (row,col) == maze_obj.true_goal:
                     pygame.draw.rect(screen, GREEN, (col * cell, row * cell, cell, cell))
                 else:
                     pygame.draw.rect(screen, DARK_GREEN, (col * cell, row * cell, cell, cell))
@@ -55,18 +59,27 @@ def draw_maze(maze):
 def main():
     global running
     running = True
-    # print(laberinto)
 
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                
 
-        screen.fill(WHITE)
-        draw_maze(maze)
+        try:
+            maze_grid, pos = next(steps)  # obtenemos el siguiente estado
+        except StopIteration:
+            running = False
+            continue  # salimos del loop
+
+        screen.fill(GRAY)
+        draw_maze(maze_grid, maze)
+
+        # resaltamos la posición actual en amarillo
+        pygame.draw.rect(screen, YELLOW, (pos[1]*cell, pos[0]*cell, cell, cell))
+
         pygame.display.flip()
-
+        pygame.time.delay(250) 
+    
     pygame.quit()
 
 if __name__ == "__main__":

@@ -1,122 +1,110 @@
-import random
-import math
+import heapq
 from maze_generator import *
 
-# Definición de colores
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
-BLUE = (0, 0, 255)
-DARK_GREEN = (15,67,15)
-
-# cell = 20
-
-def A_star(start, goals, maze):
-
-    '''
+def A_star(pos_inicial, goals, maze):
+    """
     Algoritmo A* para la busqueda de la salida del laberinto:
-    1. En cada ejecucion de elige  una salida al azar entre las posibles como salida verdadera
-    2. Se calcula la heuristica de cada nodo como la distancia de manhattan a la salida mas
+    1. Se calcula la heuristica de cada nodo como la distancia de manhattan a la salida mas
     cercana a medida que se avanza en el laberinto
-    3. El algoritmo fija la salida que tenga mas cerca y recorre el laberinto para encontrarla
-    '''
-    visited = [start] # Lista de nodos visitados
-    queue = [] # Lista de nodos en cola (por visitar)
-    path = [] # Camino seguido hasta la salida
-    pos = start # Posicion actual
-    obj_g = 0
+    2. El algoritmo fija la salida que tenga mas cerca y recorre el laberinto para encontrarla
+    """
 
-    # Verificacion de termino por si el punto de inicio coincide con una meta
-    if pos in goals:
-        if pos == true_goal: # Si es la meta verdadera se termina la ejecucion
-            print("Se ha encontrado una solucion en:", pos)
-            maze[pos] = -4
-            return maze
-        else:
-            goals.remove(pos) # Si es una meta falsa se elimina del conjunto de metas
-
-    # Encontramos la salida mas cercana
-    min = math.inf
-    for goal in goals:
-        dist = abs(pos[0] - goal[0]) + abs(pos[1] - goal[1])
-        if dist < min:
-            min = dist
-            obj_g = goal
-
-    # Obtencion de vecinos
-    neighbors = get_neighbors(pos, maze, queue, visited)
-
-    # Adicion de vecinos a los nodos no visitados
-    queue = queue + neighbors
-
-    print("Posicion inicial:", pos, maze[pos])
-    print("Posibles metas:", goals)
-    print("Meta verdadera:", true_goal, maze[true_goal])
-    print("Meta objetivo:", obj_g)
-    print("Paredes moviles:", mov_wall)
+    # Inicialización
+    queue = []  # cola de prioridad
+    heapq.heappush(queue, (0, maze.pos_inicial))
+    came_from = {}
+    g_score = {maze.pos_inicial: 0}
+    visited = set()
 
     while queue:
 
-        # Dada la salida mas cercana, la fijamos como objetivo para ahora calcular la heuristica
-        f = math.inf
-        for in_queue in queue:
-            h = abs(in_queue[0] - obj_g[0]) + abs(in_queue[1] - obj_g[1])
-            g = maze[in_queue]
-            if h + g < f:
-                f = h + g
-                # Actualizamos la posicion actual a la que tenga el valor mas bajo
-                pos = in_queue
+        # Obtener el nodo con el menor f y quitarlo de la cola
+        _, pos = heapq.heappop(queue)
+
+
+        # Damos la posibilidad de que las paredes se muevan
+        maze.update_maze()
+
+        #Visualizacion del proceso
+        #yield maze.grid_maze, pos
+
+        # Verificación de nodos visitados
+        if pos in visited:
+            continue
         
-        #Una vez obtenido el siguiente nodo, se hace lo siguiente:
-        visited.append(pos)     # Lo marcamos como visitado
-        queue.remove(pos)       # Lo sacamos de la cola
-        update_maze(maze)       # Se da la posibilidad de que una pared se mueva
-        print(pos, maze[pos])
-        maze[pos] = 0
+        # Agregar nodo a visitados
+        visited.add(pos)
+
+        # Verificación de término
+        if pos == maze.true_goal:
+            camino = rebuild_path(came_from, pos)
+            if blocked_path(camino, maze):
+                
+                print("Camino bloqueado, replanning...")
+
+                # Se reinician las estructuras de datos para replanificar
+                queue.clear()
+                heapq.heappush(queue, (0, pos_inicial))
+                came_from.clear()
+                g_score = {pos_inicial: 0}
+                visited.clear()
+                
+                continue
+            #else:
+                #for nodo in camino:
+                    #maze[nodo] = 0
+                    #yield maze, nodo
+            
+            return camino
         
-        # Verificacion de termino
-        if pos in goals:
-            # Si estamos en la meta verdadera se acaba la ejecucion del algoritmo
-            if pos == true_goal:
-                print("Se ha encontrado una solucion en:", pos)
-                maze[pos] = -4
-                return maze
-            # Si estamos en una meta falsa pero esta era nuestra meta objetivo, fijamos la proxima meta mas cercana
-            elif pos == obj_g:
-                print("Se ha encontrado una salida falsa en", pos, maze[pos])
-                maze[pos] = -3
-                # Encontramos la salida mas cercana
-                goals.remove(obj_g)
-                min = math.inf
-                for goal in goals:
-                    dist = abs(pos[0] - goal[0]) + abs(pos[1] - goal[1])
-                    if dist < min:
-                        min = dist
-                        obj_g = goal
-            # Si era una meta falsa pero no era la meta objetivo, simplemente la eliminamos del conjunto de metas
-            else:
-                goals.remove(pos)
-                maze[pos] = -3
-            print("metas restantes:", goals)
-            print("Nueva meta obejtivo:", obj_g)
+        # Caso en que se llega a una meta falsa
+        if pos in maze.goals and pos != maze.true_goal:
+            maze.goals.remove(pos)
 
-        # Obtencion de vecinos
-        neighbors = get_neighbors(pos, maze, queue, visited)
+        # Expandimos vecinos
+        vecinos = maze.get_neighbors(pos)
+        for vecino in vecinos:
+            # Cálculo de g y f de cada vecino
+            
+            g_temp = g_score[pos] + maze.grid_maze[vecino]
+            # Actualizar g_score y came_from si es un mejor camino
+            if vecino not in g_score or g_temp < g_score[vecino]:
+                g_score[vecino] = g_temp
+                f = g_temp + heuristic(vecino, maze.goals, maze.true_goal)
+                # Si el vecino no está en la cola, lo añadimos
+                heapq.heappush(queue, (f, vecino))
+                # Actualizamo el diccionario para guardar el camino
+                came_from[vecino] = pos
 
-        # Adicion de vecinos a los nodos no visitados
-        queue = queue + neighbors
-    
-    print("No se ha encontrado una solucion, posicion final:", pos)
-    return maze
+    # No se encontró solución
+    return None
 
 
+def heuristic(pos, goals, true_goal):
+    """
+    Heurística de Manhattan hacia la meta más cercana.
+    """
+    if not goals:
+        return abs(pos[0] - true_goal[0]) + abs(pos[1] - true_goal[1])
+    return min(abs(pos[0] - g[0]) + abs(pos[1] - g[1]) for g in goals)
 
-# Mini main
-# maze = maze_generator()
 
-# print(maze)
-# print()
-# A_star(pos_incial, goals, maze)
-# print()
-# print(maze)
+def rebuild_path(came_from, pos):
+    """
+    Reconstrucción del camino desde el inicio hasta la posición actual.
+    """
+    camino = [pos]
+    while pos in came_from:
+        pos = came_from[pos]
+        camino.append(pos)
+    camino.reverse()
+    return camino
+
+def blocked_path(camino, maze):
+    """
+    Verifica si el camino está bloqueado por paredes móviles.
+    """
+    for nodo in camino:
+        if maze.grid_maze[nodo] == -2:  # Si es una pared móvil
+            return True
+    return False
